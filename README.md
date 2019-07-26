@@ -10,7 +10,10 @@ We decided on an ensemble of U-Net models as our final configuration after testi
 
 Our final ensemble consists of two U-Net models working in tandem, followed by a post-processing "cleanup" phase to minimize prediction artifacts.  Both models in our ensemble were trained on axial slices, differing in the number of epochs trained and the interpretation of the output masks from each.  One model was tasked with predicting the kidney and tumor masks separately in its two output channels.  We will refer to this as the "K/T" model.  The other model was trained to predict the combined kidney+tumor mask on the first output channel, and the tumor portion on the second output channel.  We will refer to this as the "KT/T" model.  The output from the two models was combined such that both models voted equally for the inclusion of any individual mask voxel, and voxels receiving a vote from either model were included in the result sent to the post-processing stage.
 
-### Pre-processing
+## Python Environment
+We recommend using [Pipenv](https://github.com/pypa/pipenv) to manage the Python environment.  A Pipfile is included in this repository.
+
+## Pre-processing
 We found that loading the NiFTi-format files for each patient was a bottleneck in our training process, so we pre-processed the images and saved the pre-processed versions in a format that could be read directly by the Numpy package.  For our axial models, we saved each axial "slice" in an individual Numpy file.  This allowed us to load slices individually instead of loading an entire CT scan volume, further optimizing our loading times.  For training with coronal and saggital views, we saved the entire CT volume for each patient in a single Numpy file.  We optimized training on these views such that all possible slices for a single patient were used preferentially before moving to a different patient, so that we could reduce the impact of the longer load times.
 
 Our pre-processing also included a window normalization of the CT image data which thresholded the raw Hounsfield units to the range $[-500,500]$ and mapped the values to the numeric range $[0,1]$ according to the formula:
