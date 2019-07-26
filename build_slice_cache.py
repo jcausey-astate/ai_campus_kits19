@@ -11,7 +11,7 @@ import glob
 from tqdm import tqdm
 from kits_volume_utils import *
 
-KITS_DIR = "/data/biomedical-imaging/kits19/data"
+KITS_DIR = "kits19/data"
 CACHE_DIR = "img_cache"
 
 def case_from_pid(pid):

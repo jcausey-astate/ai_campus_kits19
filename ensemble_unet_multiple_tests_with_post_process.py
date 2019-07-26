@@ -18,7 +18,7 @@ from post_processing import *
 from predict_multiview import *
 
 
-base_dir = "/scratch/jcausey/biomedical-imaging/kits19/data"
+base_dir = "kits19/data"
 
 
 # Syntax for predict_multiview is:
