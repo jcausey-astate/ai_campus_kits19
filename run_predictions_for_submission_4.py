@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Runs predictions for the first submission.
+Runs predictions for the fourth submission.
+(This is the same as the second submission (score1).)
 """
 import numpy as np
 import pandas as pd
@@ -17,25 +18,22 @@ BASE_DIR = "/scratch/jcausey/biomedical-imaging/kits19/data"
 #   predict_multiview(img_vol, weights_file, orientation='axial', tu_thresh=0.1, k_thresh=0.2)
 DEFAULT_ENSEMBLE = [
     lambda img_vol: predict_multiview(
-        img_vol, weights_file="ensemble_weights/unet_axial_e150.h5"
+        img_vol, weights_file="ensemble_weights/unet_axial_e98.h5"
     ),
     lambda img_vol: predict_multiview(
-        img_vol, weights_file="ensemble_weights/unet_axial_KT-T_e205.h5"
+        img_vol, weights_file="ensemble_weights/unet_axial_KT-T_e200.h5"
     ),
 ]
-
 DEFAULT_COEFS = [(1, 1), (1, 1)]
-
+k_steps = []
+t_steps = [
+    lambda seg: fill_gaps(seg),
+    lambda seg: fill_gaps(seg, axis=1),
+    lambda seg: fill_gaps(seg, axis=2),
+]
+kt_steps = [lambda seg: keep_largest(seg)]
 DEFAULT_POST_PROC = lambda seg: post_process_kt_t(
-    seg,
-    k_steps=[],
-    t_steps=[
-        lambda seg: fill_large_gaps(seg, axis="all"),
-        lambda seg: fill_objects(seg, axis="all"),
-        lambda seg: keep_largest(seg, n=5),
-    ],
-    kt_steps=[lambda seg: keep_largest(seg)],
-    do_intersect=True,
+    seg, k_steps=k_steps, t_steps=t_steps, kt_steps=kt_steps, do_intersect=True
 )
 
 

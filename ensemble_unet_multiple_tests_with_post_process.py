@@ -32,7 +32,7 @@ models_to_check = [
     #         img_vol, weights_file="ensemble_weights/unet_axial_KT-T_e200.h5"
     #     ),
     # ]
-    # [   # "score2"
+    # [   # "score2" and "final"
     #     lambda img_vol: predict_multiview(
     #         img_vol, weights_file="ensemble_weights/unet_axial_e150.h5"
     #     ),
@@ -44,8 +44,10 @@ models_to_check = [
 model_descriptions = [
     # "2axial_score1",
     # "2axial_score2",
+    # "2axial_final",
 ]
 coefs_to_check = [
+    # [(1, 1), (1, 1)],
     # [(1, 1), (1, 1)],
     # [(1, 1), (1, 1)],
 ]
@@ -71,6 +73,18 @@ post_proc_to_check = [
     #         lambda seg: keep_largest(seg, n=5),
     #     ],
     #     kt_steps=[lambda seg: keep_largest(seg)],
+    #     do_intersect=True,
+    # ),
+    # lambda seg: post_process_kt_t_2(  # score2-with-kidney-preserving "keep_largest" pproc + singleslice removal  (final-score)
+    #     seg,
+    #     k_steps=[],
+    #     t_steps=[
+    #         lambda seg: fill_large_gaps(seg, axis="all"),
+    #         lambda seg: fill_objects(seg, axis="all"),
+    #         lambda seg: remove_single_slice_objects(seg),
+    #         lambda seg: keep_largest(seg, n=5),
+    #     ],
+    #     kt_steps=[lambda seg, vol_kt: keep_largest_intersecting_K(seg, vol_kt)],
     #     do_intersect=True,
     # ),
 ]

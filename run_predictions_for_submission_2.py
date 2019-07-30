@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Runs predictions for the first scored submission "score1".
+Runs predictions for the first submission.
 """
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ from predict_multiview import *
 from post_processing import *
 
 
-BASE_DIR = "kits19/data"
+BASE_DIR = "/scratch/jcausey/biomedical-imaging/kits19/data"
 
 
 # Syntax for predict_multiview is:

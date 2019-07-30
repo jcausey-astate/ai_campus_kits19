@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Runs predictions for the first submission, which was just a format/process
-rehearsal.
+Runs predictions for the first submission.
 """
 import numpy as np
 import pandas as pd
@@ -10,7 +9,7 @@ from orchestra import *
 from predict_multiview import *
 
 
-BASE_DIR = "kits19/data"
+BASE_DIR = "/scratch/jcausey/biomedical-imaging/kits19/data"
 
 
 # Syntax for predict_multiview is:

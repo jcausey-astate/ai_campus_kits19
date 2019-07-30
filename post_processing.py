@@ -171,11 +171,63 @@ def keep_largest(vol, n=2):
     return vol
 
 
+def keep_largest_intersecting_K(vol, vol_kt, n=2):
+    """
+    Keeps only the largest `n` connected regions that intersect with a 
+    kidney region, if an intersecting kidney region is available.
+    Sorts by "intersects with kidney" primarily, with "region size" as a 
+    secondary sort.
+    
+    @param      vol    The volume
+    @param      vol_kt The kidney/tumor labeled volume
+    @param      n      Number representing how many of the largest connected
+                       regions to keep.
+    
+    @return     A volume equivalent to `vol` with only the `n` largest
+                regions retained.
+    """
+    vol_k = vol_kt
+    vol_kt = None
+    vol_k[vol_k > 1] = 0  # Remove tumor annotations
+    vol_k = keep_largest(vol_k, n=n)  # Select `n` from kidney mask first
+
+    lvol, regions = label(vol, connectivity=2, return_num=True)
+    volumes = []
+    obj_vol = np.zeros_like(lvol)
+    for l_idx in range(1, regions + 1):
+        obj_vol[:] = 0
+        obj_vol[lvol == l_idx] = 1
+        volumes.append((l_idx, np.sum(lvol == l_idx), does_intersect(obj_vol, vol_k)))
+    del obj_vol
+
+    volumes_dtype = [("l_idx", int), ("volume_size", int), ("has_kidney", bool)]
+    volumes = np.array(volumes, dtype=volumes_dtype)
+    volumes.sort(
+        order=["has_kidney", "volume_size"]
+    )  # Sort by "has kidney" with secondary "size" sort.
+    volumes = np.flip(volumes)  # reverse the array to put the largest first
+
+    vol = np.zeros_like(vol)
+    for volume in volumes[:n]:
+        l_idx, _, _ = volume
+        vol[lvol == l_idx] = 1
+
+    return vol
+
+
 def intersect(vol1, vol2):
     """
     Returns the logical intersection of volumes `vol1` and `vol2`.
     """
     return np.logical_and(vol1.astype(bool), vol2.astype(bool)).astype(int)
+
+
+def does_intersect(vol1, vol2):
+    """
+    Returns true if any non-zero voxel in vol1 corresponds to a 
+    non-zero voxel in vol2.
+    """
+    return np.any(intersect(vol1, vol2).astype(bool))
 
 
 def fill_objects(vol, axis=0):
@@ -250,6 +302,53 @@ def post_process_kt_t(vol, k_steps=[], t_steps=[], kt_steps=[], do_intersect=Fal
 
     for step in kt_steps:
         vol = step(vol)
+
+    if do_intersect:
+        vol_tu = intersect(vol, vol_tu)
+    vol[vol_tu > 0] = 2
+
+    return vol
+
+
+def post_process_kt_t_2(vol, k_steps=[], t_steps=[], kt_steps=[], do_intersect=False):
+    """
+    Apply post-processing cleanup steps to the combined kidney/tumor volume
+    and the tumor-only volume.  Expects `vol` labeled 0,1,2 and returns
+    in the same format.
+    Updates occur in the order: t_steps, k_steps, (k+t), kt_steps, [intersect]
+    This version passes the working volume, kidney mask, and tumor mask to the kt_steps
+    functions: f(vol, kt_labeled)
+
+    @param      vol           The volume
+    @param      k_steps       A list of functions to which the K volume will be passed,
+                              sequenced in the order they are to be (serially) applied.
+    @param      t_steps       A list of functions to which the Tumor volume will be passed,
+                              sequenced in the order they are to be (serially) applied.
+    @param      kt_steps      A list of functions to which the K+T volume will be passed,
+                              sequenced in the order they are to be (serially) applied.
+    @param      do_intersect  Set to `True` if you want to force Tumor segmentations to be
+                              contained in the intersection of K+T after all post-processing
+                              steps are applied to the K+T volume.
+
+    @return     A volumetric 0,1,2 mask equivalent to `vol`, but with all post-processing 
+                steps appied.
+    """
+    vol_tu = (vol == 2).astype("uint8")
+    vol_k = (vol == 1).astype("uint8")
+    del vol
+
+    for step in k_steps:
+        vol_k = step(vol_k)
+    for step in t_steps:
+        vol_tu = step(vol_tu)
+
+    vol = np.logical_or(vol_tu.astype(bool), vol_k.astype(bool)).astype("uint8")
+    del vol_k
+
+    vol_kt = np.copy(vol)
+    vol_kt[vol_tu > 0] = 2
+    for step in kt_steps:
+        vol = step(vol, vol_kt)
 
     if do_intersect:
         vol_tu = intersect(vol, vol_tu)

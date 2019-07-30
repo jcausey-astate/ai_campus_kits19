@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Runs predictions for the first submission.
+Runs predictions for the fifth and final submission.
 """
 import numpy as np
 import pandas as pd
@@ -22,19 +22,26 @@ DEFAULT_ENSEMBLE = [
     lambda img_vol: predict_multiview(
         img_vol, weights_file="ensemble_weights/unet_axial_KT-T_e205.h5"
     ),
+    lambda img_vol: predict_multiview(
+        img_vol, weights_file="ensemble_weights/unet_axial_e98.h5"
+    ),
+    lambda img_vol: predict_multiview(
+        img_vol, weights_file="ensemble_weights/unet_axial_KT-T_e200.h5"
+    ),
 ]
 
-DEFAULT_COEFS = [(1, 1), (1, 1)]
+DEFAULT_COEFS = [(1, 1), (1, 1), (1, 1), (1, 1)]
 
-DEFAULT_POST_PROC = lambda seg: post_process_kt_t(
+DEFAULT_POST_PROC = lambda seg: post_process_kt_t_2(  # score2-with-kidney-preserving "keep_largest" pproc + singleslice removal
     seg,
     k_steps=[],
     t_steps=[
         lambda seg: fill_large_gaps(seg, axis="all"),
         lambda seg: fill_objects(seg, axis="all"),
+        lambda seg: remove_single_slice_objects(seg, axis=0),
         lambda seg: keep_largest(seg, n=5),
     ],
-    kt_steps=[lambda seg: keep_largest(seg)],
+    kt_steps=[lambda seg, vol_kt: keep_largest_intersecting_K(seg, vol_kt)],
     do_intersect=True,
 )
 
